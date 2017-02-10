@@ -23,7 +23,7 @@ public class SetColor extends Instruction{
     }
 
     @Override
-    public void draw(Graphics2D g){
+    public void execute(Graphics2D g){
         g.setColor(new Color(this.r, this.g, this.b));
     }
 }

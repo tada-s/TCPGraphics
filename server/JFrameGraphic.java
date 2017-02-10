@@ -6,25 +6,7 @@
 
 package tcpgraphic;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
-import tcpgraphic.Instruction.DrawLine;
-import tcpgraphic.Instruction.DrawOval;
-import tcpgraphic.Instruction.DrawRect;
-import tcpgraphic.Instruction.DrawString;
-import tcpgraphic.Instruction.FillRect;
-import tcpgraphic.Instruction.Instruction;
-import tcpgraphic.Instruction.SetColor;
 
 /**
  *
@@ -32,199 +14,43 @@ import tcpgraphic.Instruction.SetColor;
  */
 public class JFrameGraphic extends javax.swing.JFrame {
 
-    ArrayList<Instruction> instructions;
-
-    BufferedImage biBackground;
-    Graphics2D gFrame;
-    Graphics2D gBackground;
+    private Rendering rendering;
+    private ViewContext context;
     
-    public int viewPortWidth;
-    public int viewPortHeight;
-    public double viewOriginX = 0;
-    public double viewOriginY = 0;
-    public double viewScaleFactor = 20;
-
-    public double gridSize = 1;
+    private int mouseX = 0;
+    private int mouseY = 0;
     
-    int mouseX = 0;
-    int mouseY = 0;
-    
-    ViewContext context = new ViewContext(){
-        @Override
-        public int transformX(double x){
-            return (int)(viewScaleFactor * x + viewOriginX);
-        }
-
-        @Override
-        public int transformY(double y){
-            return (int)(-viewScaleFactor * y + viewOriginY);
-        }
-
-        @Override
-        public int transform(double n){
-            return (int) (viewScaleFactor * n);
-        }
-    };
-        
-    TimerTask renderTask = new TimerTask(){
-        @Override
-        public void run(){
-            gBackground.setColor(Color.white);
-            gBackground.fillRect(0, 0, biBackground.getWidth(), biBackground.getHeight());
-            
-            if(gridSize != 0){
-                gBackground.setColor(new Color(250, 250, 250));
-                double delta = gridSize * viewScaleFactor;
-                for(int i = 0; i < (int)(viewPortWidth /viewScaleFactor); i++){
-                    int x = (int)(viewOriginX % delta + delta * i);
-                    gBackground.drawLine(x, 0, x, viewPortHeight);
-                }
-                for(int i = 0; i < (int)(viewPortHeight /viewScaleFactor); i++){
-                    int y = (int)(viewOriginY % delta + delta * i);
-                    gBackground.drawLine(0, y, viewPortWidth, y);
-                }
-                gBackground.setColor(new Color(230, 230, 230));
-                gBackground.drawLine((int)viewOriginX, 0, (int)viewOriginX, viewPortHeight);
-                gBackground.drawLine(0, (int)viewOriginY, viewPortWidth, (int)viewOriginY);
-            }
-            
-            gBackground.setColor(Color.black);
-            for(int i = 0; i < instructions.size(); i++){
-                instructions.get(i).setContext(context);
-                instructions.get(i).draw(gBackground);
-            }
-            
-            gFrame.drawImage(biBackground, 0, 0, null);
-            
-        }
-    };
-    
-    Thread socketThread = new Thread(){
-        public void run(){
-            try{
-                String clientCommand;
-                ServerSocket welcomeSocket = new ServerSocket(6789);
-
-                while(true)
-                {
-                    Socket connectionSocket = welcomeSocket.accept();
-                    BufferedReader inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
-                    //DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
-                    try{
-                        while(true){
-                            if(!manageStream(inFromClient)) break;
-                        }
-                    }catch(IOException e){}
-                }
-            }catch(IOException e){}
-        }
-    };
     
     /**
      * Creates new form JFrameGraphic
      */
     public JFrameGraphic() {
         initComponents();
-        gFrame = (Graphics2D) this.getGraphics();
-        biBackground = new BufferedImage(1024, 768, BufferedImage.TYPE_INT_ARGB);
-        gBackground = (Graphics2D) biBackground.getGraphics();
-        gBackground.setColor(Color.white);
-        gBackground.fillRect(0, 0, 1024, 768);
-        gBackground.setColor(new Color(0, 0, 0));
         
-        viewPortWidth = this.getWidth();
-        viewPortHeight = this.getHeight();
+        context = new ViewContext();
+        context.setViewportWidth(this.getWidth());
+        context.setViewportHeight(this.getHeight());
+        context.setViewOriginX(this.getWidth() / 2);
+        context.setViewOriginY(this.getHeight() / 2);
         
-        viewOriginX = this.getWidth() / 2;
-        viewOriginY = this.getHeight() / 2;
-        
-        instructions = new ArrayList<>();
-
-        Timer t = new Timer();
-        t.schedule(renderTask, 0, 10);
-        
-        socketThread.start();
+        rendering = new Rendering((Graphics2D) this.getGraphics(), context);
+        rendering.start();
     }
-    
-    
-    boolean manageStream(BufferedReader br) throws IOException {
-        String clientCommand = br.readLine();
-        if(clientCommand == null) return false;
-        
-        switch(clientCommand){
-            case "clear":{
-                Color aux = gBackground.getColor();
-                gBackground.setColor(Color.white);
-                gBackground.fillRect(0, 0, biBackground.getWidth(), biBackground.getHeight());
-                gBackground.setColor(aux);
-                instructions.clear();
-                System.out.println("clear");
-                break;  
-            }case "drawLine":{
-                double x1 = Double.parseDouble(br.readLine());
-                double y1 = Double.parseDouble(br.readLine());
-                double x2 = Double.parseDouble(br.readLine());
-                double y2 = Double.parseDouble(br.readLine());
-                instructions.add(new DrawLine(x1, y1, x2, y2));
-                System.out.println("drawLine: (" + x1 + ", " + y1 + ") to (" + x2 + ", " + y2 + ")");
-                break;
-            }case "drawRect":{
-                double x = Double.parseDouble(br.readLine());
-                double y = Double.parseDouble(br.readLine());
-                double w = Double.parseDouble(br.readLine());
-                double h = Double.parseDouble(br.readLine());
-                instructions.add(new DrawRect(x, y, w, h));
-                System.out.println("drawRect: (" + x + ", " + y + "), width " + w + ", height " + h + ")");
-                break;
-            }case "drawOval":{
-                double x = Double.parseDouble(br.readLine());
-                double y = Double.parseDouble(br.readLine());
-                double w = Double.parseDouble(br.readLine());
-                double h = Double.parseDouble(br.readLine());
-                instructions.add(new DrawOval(x, y, w, h));
-                System.out.println("drawOval: (" + x + ", " + y + "), width " + w + ", height " + h + ")");
-                break;
-            }case "fillRect":{
-                double x = Double.parseDouble(br.readLine());
-                double y = Double.parseDouble(br.readLine());
-                double w = Double.parseDouble(br.readLine());
-                double h = Double.parseDouble(br.readLine());
-                instructions.add(new FillRect(x, y, w, h));
-                System.out.println("fillRect: (" + x + ", " + y + "), width " + w + ", height " + h + ")");
-                break;
-            }case "setColor":{
-                int r = Integer.parseInt(br.readLine());
-                int g = Integer.parseInt(br.readLine());
-                int b = Integer.parseInt(br.readLine());
-                instructions.add(new SetColor(r, g, b));
-                System.out.println("setColor: " + r + " " + g + " " + b + " ");
-                break;
-            }case "drawString":{
-                String str = br.readLine();
-                double x = Double.parseDouble(br.readLine());
-                double y = Double.parseDouble(br.readLine());
-                instructions.add(new DrawString(str, x, y));
-                System.out.println("drawString: (" + x + ", " + y + "), string \"" + str + "\"");
-                break;
-            }case "setAntialiasing":{
-                boolean aliasing = Boolean.parseBoolean(br.readLine());
-                if(aliasing){
-                    gBackground.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }else{
-                    gBackground.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-                }
-                System.out.println("Antialiasing: " + aliasing);
-                break;
-            }case "setGridSize":{
-                double gridSize = Double.parseDouble(br.readLine());
-                this.gridSize = gridSize;
-                System.out.println("setGrid: " + gridSize);
-                break;
-            }default:
-                System.out.println("?? [" + clientCommand + "]");
-                break;
-        }
-        return true;
+
+    public Rendering getRendering() {
+        return rendering;
+    }
+
+    public void setRendering(Rendering rendering) {
+        this.rendering = rendering;
+    }
+
+    public ViewContext getContext() {
+        return context;
+    }
+
+    public void setContext(ViewContext context) {
+        this.context = context;
     }
 
     /**
@@ -274,8 +100,12 @@ public class JFrameGraphic extends javax.swing.JFrame {
         int deltaX = evt.getX() - mouseX;
         int deltaY = evt.getY() - mouseY;
         
+        double viewOriginX = context.getViewOriginX();
+        double viewOriginY = context.getViewOriginY();
         viewOriginX += deltaX;
         viewOriginY += deltaY;
+        context.setViewOriginX(viewOriginX);
+        context.setViewOriginY(viewOriginY);
         
         mouseX = evt.getX();
         mouseY = evt.getY();
@@ -292,7 +122,6 @@ public class JFrameGraphic extends javax.swing.JFrame {
     }//GEN-LAST:event_formMouseMoved
 
     private void formMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_formMouseWheelMoved
-        // TODO add your handling code here:
         double rotation = evt.getPreciseWheelRotation();
         double scaleFactor;
         if(rotation > 0){
@@ -303,10 +132,15 @@ public class JFrameGraphic extends javax.swing.JFrame {
         int scaleOriginX = evt.getX();
         int scaleOriginY = evt.getY();
         
+        double viewOriginX = context.getViewOriginX();
+        double viewOriginY = context.getViewOriginY();
+        double viewScaleFactor = context.getViewScaleFactor();
         viewOriginX = (viewOriginX - scaleOriginX) * scaleFactor + scaleOriginX;
         viewOriginY = (viewOriginY - scaleOriginY) * scaleFactor + scaleOriginY;
         viewScaleFactor = viewScaleFactor * scaleFactor;
-        
+        context.setViewOriginX(viewOriginX);
+        context.setViewOriginY(viewOriginY);
+        context.setViewScaleFactor(viewScaleFactor);
     }//GEN-LAST:event_formMouseWheelMoved
 
     /**

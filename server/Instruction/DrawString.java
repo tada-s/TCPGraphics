@@ -23,7 +23,7 @@ public class DrawString extends Instruction{
     }
 
     @Override
-    public void draw(Graphics2D g){
+    public void execute(Graphics2D g){
         g.drawString(str, context.transformX(x), context.transformY(y));
     }
 }

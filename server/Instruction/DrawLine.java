@@ -7,6 +7,7 @@
 package tcpgraphic.Instruction;
 
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 
 /**
  *
@@ -23,10 +24,9 @@ public class DrawLine extends Instruction{
     }
 
     @Override
-    public void draw(Graphics2D g){
+    public void execute(Graphics2D g){
         g.drawLine(context.transformX(x1), context.transformY(y1),
                    context.transformX(x2), context.transformY(y2));
-    
     }
 }
 

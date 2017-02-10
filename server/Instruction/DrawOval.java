@@ -23,7 +23,7 @@ public class DrawOval extends Instruction{
     }
 
     @Override
-    public void draw(Graphics2D g){
+    public void execute(Graphics2D g){
         g.drawOval(context.transformX(x), context.transformY(y + h), context.transform(w), context.transform(h));
     }
 }
