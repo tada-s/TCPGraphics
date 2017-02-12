@@ -2,25 +2,25 @@
 
 A simple drawing tool for C/C++.
 
-### Instructions:
+## Instructions:
 * Download the TCP Graphics server.
 * Download the TCP Client source code and copy to the C/C++ project or working directory
 * Write a code (see sample code)
 * Open TCP Graphics server
-* Compile and Run the C/C++ code
+* Compile and Run the C/C++ code (with the linker option -lws2_32)
 * :D
 
-## It may require
+## Requirement
 To run the jar binary, it may require JRE 1.7 or compile with an appropiate JDK.
+Supported OS: Linux / Windows.
 
-### Sample code:
+## Sample code:
 
 ```c
 #include "tcpgraphics.h"
-int main(int argc , char *argv[])
-{
+int main(){
     displayMessage(false);
-    initConnection();
+    startConnection();
 
     setAntialiasing(true);
     setGridSize(1);
