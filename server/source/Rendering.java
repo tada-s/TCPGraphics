@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package tcpgraphic;
 
 import java.awt.Color;
@@ -30,6 +24,9 @@ public class Rendering {
     private BufferedImage biBackground;
     private Graphics2D gBackground;
     private Graphics2D gOut;
+    
+    private Color gridColor;
+    private Color axisColor;
 
     private Timer t;
     private TimerTask renderTask = new TimerTask(){
@@ -67,6 +64,8 @@ public class Rendering {
         this.context = context;
 
         instructions = new ArrayList<>();
+        gridColor = new Color(250, 250, 250);
+        axisColor = new Color(230, 230, 230);
     }
     
     public void start(){
@@ -97,7 +96,7 @@ public class Rendering {
     /* Private method */
     
     private void drawGrid(){
-        gBackground.setColor(new Color(250, 250, 250));
+        gBackground.setColor(gridColor);
         double delta = gridSize * context.getViewScaleFactor();
         for(int i = 0; i < (int)(context.getViewportWidth() / context.getViewScaleFactor()); i++){
             int x = (int)(context.getViewOriginX() % delta + delta * i);
@@ -107,7 +106,7 @@ public class Rendering {
             int y = (int)(context.getViewOriginY() % delta + delta * i);
             gBackground.drawLine(0, y, context.getViewportWidth(), y);
         }
-        gBackground.setColor(new Color(230, 230, 230));
+        gBackground.setColor(axisColor);
         gBackground.drawLine((int)context.getViewOriginX(), 0, (int)context.getViewOriginX(), context.getViewportHeight());
         gBackground.drawLine(0, (int)context.getViewOriginY(), context.getViewportWidth(), (int)context.getViewOriginY());
     }
@@ -124,4 +123,13 @@ public class Rendering {
     public void setGridSize(double gridSize){
         this.gridSize = gridSize;
     }
+
+    public void setGridColor(int r, int g, int b) {
+        this.gridColor = new Color(r, g, b);
+    }
+    public void setAxisColor(int r, int g, int b) {
+        this.axisColor = new Color(r, g, b);
+    }
+    
+    
 }
