@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package tcpgraphic;
 
 import java.io.BufferedReader;
@@ -15,6 +9,7 @@ import tcpgraphic.Instruction.DrawLine;
 import tcpgraphic.Instruction.DrawOval;
 import tcpgraphic.Instruction.DrawRect;
 import tcpgraphic.Instruction.DrawString;
+import tcpgraphic.Instruction.FillOval;
 import tcpgraphic.Instruction.FillRect;
 import tcpgraphic.Instruction.SetColor;
 
@@ -24,7 +19,10 @@ import tcpgraphic.Instruction.SetColor;
  */
 public class Main {
     
-    Thread socketThread = new Thread(){
+    private JFrameGraphic frame;
+    
+    private Thread socketThread = new Thread(){
+        @Override
         public void run(){
             try{
                 String clientCommand;
@@ -86,6 +84,14 @@ public class Main {
                 frame.getRendering().addInstruction(new FillRect(x, y, w, h));
                 System.out.println("fillRect: (" + x + ", " + y + "), width " + w + ", height " + h + ")");
                 break;
+            }case "fillOval":{
+                double x = Double.parseDouble(br.readLine());
+                double y = Double.parseDouble(br.readLine());
+                double w = Double.parseDouble(br.readLine());
+                double h = Double.parseDouble(br.readLine());
+                frame.getRendering().addInstruction(new FillOval(x, y, w, h));
+                System.out.println("fillOval: (" + x + ", " + y + "), width " + w + ", height " + h + ")");
+                break;
             }case "setColor":{
                 int r = Integer.parseInt(br.readLine());
                 int g = Integer.parseInt(br.readLine());
@@ -110,14 +116,26 @@ public class Main {
                 frame.getRendering().setGridSize(gridSize);
                 System.out.println("setGridSize: " + gridSize);
                 break;
+            }case "setGridColor":{
+                int r = Integer.parseInt(br.readLine());
+                int g = Integer.parseInt(br.readLine());
+                int b = Integer.parseInt(br.readLine());
+                frame.getRendering().setGridColor(r, g, b);
+                System.out.println("setGridColor: " + r + " " + g + " " + b + " ");
+                break;
+            }case "setAxisColor":{
+                int r = Integer.parseInt(br.readLine());
+                int g = Integer.parseInt(br.readLine());
+                int b = Integer.parseInt(br.readLine());
+                frame.getRendering().setAxisColor(r, g, b);
+                System.out.println("setAxisColor: " + r + " " + g + " " + b + " ");
+                break;
             }default:
                 System.out.println("?? [" + clientCommand + "]");
                 break;
         }
         return true;
     }
-    
-    JFrameGraphic frame;
     
     public Main(){
         frame = new JFrameGraphic();
